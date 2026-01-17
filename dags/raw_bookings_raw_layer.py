@@ -7,7 +7,7 @@ from psycopg2.extras import execute_values
 
 SOURCE_CONN_ID = "PostgreSQL_Source"
 DW_CONN_ID = "PostgreSQL_DW"
-SOURCE_SCHEMA = "bookings"
+SOURCE_SCHEMA = "demo"
 RAW_SCHEMA = "raw"
 TABLES = [
     "bookings",
