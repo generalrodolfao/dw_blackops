@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  postgres_source:
+    image: postgres:16
+    container_name: postgres_source
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_source_data:/var/lib/postgresql/data
+
+  postgres_dw:
+    image: postgres:16
+    container_name: postgres_dw
+    environment:
+      POSTGRES_USER: dw
+      POSTGRES_PASSWORD: dw_password
+      POSTGRES_DB: dw
+    ports:
+      - "5434:5432"
+    command: >
+      postgres
+        -c shared_buffers=512MB
+        -c work_mem=64MB
+        -c maintenance_work_mem=256MB
+        -c effective_cache_size=1536MB
+        -c max_parallel_workers_per_gather=4
+        -c max_worker_processes=8
+        -c max_parallel_workers=8
+        -c random_page_cost=1.1
+        -c wal_level=logical
+        -c max_wal_size=4GB
+        -c checkpoint_timeout=30min
+        -c synchronous_commit=off
+        -c autovacuum=on
+    volumes:
+      - pg_dw_data:/var/lib/postgresql/data
+
+  airflow:
+    image: apache/airflow:2.9.2
+    container_name: airflow
+    environment:
+      AIRFLOW_UID: "50000"
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW_CONN_PG_SOURCE: postgresql+psycopg2://postgres:postgres@postgres_source:5432/postgres
+      AIRFLOW_CONN_PG_DW: postgresql+psycopg2://dw:dw_password@postgres_dw:5432/dw
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres_source
+      - postgres_dw
+    command: standalone
+
+volumes:
+  pg_source_data:
+  pg_dw_data:
+
