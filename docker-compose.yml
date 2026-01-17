@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
     ports:
-      - "5433:5432"
+      - "55432:5432"
     volumes:
       - pg_source_data:/var/lib/postgresql/data
 
@@ -21,7 +21,7 @@ services:
       POSTGRES_PASSWORD: dw_password
       POSTGRES_DB: dw
     ports:
-      - "5434:5432"
+      - "55433:5432"
     command: >
       postgres
         -c shared_buffers=512MB
@@ -61,4 +61,3 @@ services:
 volumes:
   pg_source_data:
   pg_dw_data:
-
