@@ -42,7 +42,7 @@ services:
 
   airflow:
     image: apache/airflow:2.9.2
-    container_name: airflow
+    container_name: airflow_dw
     environment:
       AIRFLOW_UID: "50000"
       AIRFLOW__CORE__LOAD_EXAMPLES: "False"
