@@ -1,9 +1,12 @@
 from datetime import datetime
+import logging
 
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 from psycopg2.extras import execute_values
 
+
+log = logging.getLogger(__name__)
 
 SOURCE_CONN_ID = "PostgreSQL_Source"
 DW_CONN_ID = "PostgreSQL_DW"
@@ -56,8 +59,7 @@ def _sync_table(table_name):
 
     source_conn = source.get_conn()
     dw_conn = dw.get_conn()
-    source_cursor = source_conn.cursor(name=f"csr_{table_name}")
-    source_cursor.itersize = 10000
+    source_cursor = source_conn.cursor()
     column_names = [c[0] for c in columns]
     cols_sql = ", ".join(column_names)
     source_cursor.execute(
@@ -65,12 +67,20 @@ def _sync_table(table_name):
     )
     dw_cursor = dw_conn.cursor()
     insert_sql = f"INSERT INTO {RAW_SCHEMA}.{table_name} ({cols_sql}) VALUES %s"
+
+    total_rows = 0
     while True:
         rows = source_cursor.fetchmany(10000)
         if not rows:
             break
         execute_values(dw_cursor, insert_sql, rows)
         dw_conn.commit()
+        batch_count = len(rows)
+        total_rows += batch_count
+        log.info("Inseridos %s registros em raw.%s", batch_count, table_name)
+
+    log.info("Carga completa da tabela raw.%s: %s registros inseridos", table_name, total_rows)
+
     source_cursor.close()
     dw_cursor.close()
     source_conn.close()
@@ -95,4 +105,3 @@ def raw_bookings_layer():
 
 
 dag = raw_bookings_layer()
-
