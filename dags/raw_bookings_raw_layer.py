@@ -24,11 +24,27 @@ TABLES = [
 ]
 
 
+def _map_data_type(data_type: str) -> str:
+    dt = data_type.lower()
+    if dt in ("character varying", "character", "text"):
+        return "text"
+    if dt.startswith("timestamp"):
+        return "timestamp with time zone"
+    if dt == "numeric":
+        return "numeric"
+    if dt in ("integer", "int4"):
+        return "integer"
+    if dt in ("bigint", "int8"):
+        return "bigint"
+    return data_type
+
+
 def _build_create_table_ddl(columns, table_name):
     column_defs = []
     for name, data_type, is_nullable in columns:
+        mapped_type = _map_data_type(data_type)
         nullable = "NULL" if is_nullable == "YES" else "NOT NULL"
-        column_defs.append(f"{name} {data_type} {nullable}")
+        column_defs.append(f"{name} {mapped_type} {nullable}")
     cols_sql = ", ".join(column_defs)
     return f"CREATE TABLE IF NOT EXISTS {RAW_SCHEMA}.{table_name} ({cols_sql})"
 
