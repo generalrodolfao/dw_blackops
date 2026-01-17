@@ -3,7 +3,7 @@ import logging
 
 from airflow.decorators import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from psycopg2.extras import execute_values
+from psycopg2.extras import execute_values, Json
 
 
 log = logging.getLogger(__name__)
@@ -28,6 +28,8 @@ def _map_data_type(data_type: str) -> str:
     dt = data_type.lower()
     if dt in ("character varying", "character", "text"):
         return "text"
+    if dt in ("json", "jsonb"):
+        return "jsonb"
     if dt.startswith("timestamp"):
         return "timestamp with time zone"
     if dt == "numeric":
@@ -89,9 +91,37 @@ def _sync_table(table_name):
         rows = source_cursor.fetchmany(10000)
         if not rows:
             break
-        execute_values(dw_cursor, insert_sql, rows)
+
+        first = rows[0]
+        json_indices = [
+            idx
+            for idx, (_, data_type, _) in enumerate(columns)
+            if data_type.lower() in ("json", "jsonb")
+        ]
+
+        if isinstance(first, dict):
+            normalized_rows = []
+            for row in rows:
+                values = []
+                for idx, col_name in enumerate(column_names):
+                    val = row[col_name]
+                    if idx in json_indices and val is not None:
+                        val = Json(val)
+                    values.append(val)
+                normalized_rows.append(tuple(values))
+        else:
+            normalized_rows = []
+            for row in rows:
+                values = list(row)
+                for idx in json_indices:
+                    val = values[idx]
+                    if val is not None:
+                        values[idx] = Json(val)
+                normalized_rows.append(tuple(values))
+
+        execute_values(dw_cursor, insert_sql, normalized_rows)
         dw_conn.commit()
-        batch_count = len(rows)
+        batch_count = len(normalized_rows)
         total_rows += batch_count
         log.info("Inseridos %s registros em raw.%s", batch_count, table_name)
 
