@@ -38,7 +38,7 @@ SELECT
     -- Assuming model might be JSON/JSONB. If text, try to treat as such or just take it.
     -- For safety in demo data which often has {"en": "..."}:
     CASE 
-        WHEN model::text LIKE '{%' THEN jsonb_extract_path_text(model::jsonb, 'en') 
+        WHEN LEFT(model::text, 1) = '{' THEN jsonb_extract_path_text(model::jsonb, 'en') 
         ELSE model::text 
     END AS model,
     "range",
