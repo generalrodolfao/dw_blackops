@@ -80,5 +80,5 @@ LEFT JOIN staging.boarding_passes bp ON tf.ticket_no = bp.ticket_no AND tf.fligh
 -- Lookup Dimensions
 LEFT JOIN mart.dim_passenger p ON t.passenger_id = p.passenger_id
 LEFT JOIN mart.dim_aircraft ac ON f.aircraft_code = ac.aircraft_code
-LEFT JOIN mart.dim_airport dep ON f.airport_code_departure = dep.airport_code
-LEFT JOIN mart.dim_airport arr ON f.airport_code_arrival = arr.airport_code;
+LEFT JOIN mart.dim_airport dep ON f.departure_airport = dep.airport_code
+LEFT JOIN mart.dim_airport arr ON f.arrival_airport = arr.airport_code;

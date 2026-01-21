@@ -10,8 +10,8 @@ SELECT
     actual_arrival::timestamptz AS actual_arrival,
     UPPER(TRIM(status)) AS status,
     aircraft_code,
-    airport_code_departure,
-    airport_code_arrival,
+    departure_airport,
+    arrival_airport,
     -- Derived Metrics
     EXTRACT(EPOCH FROM (actual_departure::timestamptz - scheduled_departure::timestamptz))/60 AS departure_delay_minutes,
     EXTRACT(EPOCH FROM (actual_arrival::timestamptz - scheduled_arrival::timestamptz))/60 AS arrival_delay_minutes,
